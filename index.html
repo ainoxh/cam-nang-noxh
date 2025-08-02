@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Calm Harmony -->
-    <!-- Application Structure Plan: The SPA is designed with a user-centric, task-oriented approach rather than mirroring the report's linear structure. It features a sticky navigation for easy access to distinct sections: 'Tổng Quan' (Overview) with an interactive timeline, 'Dành cho Người Mua' (For Buyers) with an eligibility checker and process guide, 'Dành cho Chủ Đầu Tư' with key incentives and rules, 'Tra Cứu Văn Bản' with a searchable table, 'Trợ Lý Pháp Lý AI' for a chatbot, and finally a 'Đăng Ký Tư Vấn' section with an embedded Google Form. This structure was chosen to serve the distinct needs of different user personas and make complex legal information digestible and actionable. -->
+    <!-- Application Structure Plan: The SPA is designed with a user-centric, task-oriented approach rather than mirroring the report's linear structure. It features a sticky navigation for easy access to distinct sections: 'Tổng Quan' (Overview) with an interactive timeline, 'Dành cho Người Mua' (For Buyers) with an eligibility checker, process guide, and a drafting assistant, 'Dành cho Chủ Đầu Tư' with key incentives and rules, 'Tra Cứu Văn Bản' with a searchable table, 'Trợ Lý Pháp Lý AI' for a chatbot, and finally a 'Đăng Ký Tư vấn' section with an embedded Google Form. This structure was chosen to serve the distinct needs of different user personas and make complex legal information digestible and actionable. -->
     <!-- Visualization & Content Choices: 
         1. Report Info: Timeline of legal documents -> Goal: Show legislative momentum -> Viz: Interactive Chart.js scatter plot -> Interaction: Hover/click to see details -> Justification: More engaging than a list, visualizes the "wave of legislation".
         2. Report Info: Buyer eligibility criteria (income cap, status) -> Goal: Personalize information -> Presentation: Interactive HTML form (eligibility checker) -> Interaction: User input for immediate feedback -> Justification: Turns passive rules into an active, helpful tool.
@@ -19,6 +19,7 @@
         4. Report Info: Full list of legal documents -> Goal: Enable professional research -> Presentation: Searchable HTML table with AI summary button -> Interaction: Live search/filter and click to generate summary -> Justification: Enhances utility of the source table and provides quick access to key points.
         5. Report Info: General legal questions -> Goal: Provide a quick answer tool -> Presentation: Chatbot UI -> Interaction: User enters a question, AI provides an answer -> Justification: Offers a dynamic, conversational way to explore the topic.
         6. Report Info: Customer consultation requests -> Goal: Collect user information -> Presentation: Embedded Google Form via iframe -> Interaction: User fills out form and submits -> Justification: Simplest way to integrate a data collection tool without backend code.
+        7. New Feature: User drafting legal documents -> Goal: Assist with a practical task -> Presentation: Text area with AI-powered draft generation -> Interaction: User describes situation, clicks button for a custom draft -> Justification: Directly helps users with a common pain point, leveraging LLM's text generation capabilities.
         Library/Method: Chart.js for canvas-based charts, Vanilla JS for all interactions and API calls, Tailwind CSS for layout and styling, iframe for form embed. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -48,6 +49,10 @@
         }
         .tab-button {
             transition: background-color 0.3s, color 0.3s;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
     </style>
 </head>
@@ -134,6 +139,7 @@
                         <button data-tab="eligibility" class="tab-button active px-4 py-2 text-sm font-semibold rounded-full bg-stone-100 text-stone-700">1. Kiểm Tra Điều Kiện</button>
                         <button data-tab="documents" class="tab-button px-4 py-2 text-sm font-semibold rounded-full bg-stone-100 text-stone-700">2. Hồ Sơ Cần Chuẩn Bị</button>
                         <button data-tab="process" class="tab-button px-4 py-2 text-sm font-semibold rounded-full bg-stone-100 text-stone-700">3. Quy Trình Mua Nhà</button>
+                        <button data-tab="draft" class="tab-button px-4 py-2 text-sm font-semibold rounded-full bg-stone-100 text-stone-700">4. Soạn Đơn Mẫu ✨</button>
                     </div>
                 </div>
                 
@@ -223,6 +229,20 @@
                                 <h4 class="font-semibold mt-3">Nhận Nhà</h4>
                                 <p class="text-sm text-stone-500">Nhận bàn giao nhà và Sổ hồng.</p>
                             </div>
+                        </div>
+                    </div>
+                    <!-- Drafting Assistant Tab -->
+                    <div id="draft-content" class="tab-content hidden">
+                        <h3 class="text-xl font-semibold mb-4 text-teal-700">Tạo Đơn Mẫu Đăng Ký ✨</h3>
+                        <p class="mb-6 text-stone-600">Mô tả tình hình của bạn (ví dụ: "Tôi là công nhân, thu nhập 10 triệu/tháng, chưa có nhà, muốn mua nhà ở xã hội.") để AI tạo một bản nháp đơn đăng ký.</p>
+                        <div class="space-y-4">
+                            <textarea id="draftInput" rows="5" placeholder="Mô tả chi tiết tình hình của bạn..." class="w-full p-3 border border-stone-300 rounded-lg focus:ring-teal-500 focus:border-teal-500"></textarea>
+                            <button id="generateDraftBtn" class="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors">Tạo đơn mẫu ✨</button>
+                            <div id="draftResult" class="mt-4 p-4 rounded-md bg-stone-100 text-stone-800 hidden">
+                                <h4 class="font-semibold text-lg mb-2">Bản nháp đơn đăng ký:</h4>
+                                <pre id="draftText"></pre>
+                            </div>
+                            <div id="draftLoading" class="hidden mt-4 text-center text-teal-600">Đang tạo đơn mẫu...</div>
                         </div>
                     </div>
                 </div>
@@ -511,6 +531,37 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Drafting Assistant logic
+    const generateDraftBtn = document.getElementById('generateDraftBtn');
+    const draftInput = document.getElementById('draftInput');
+    const draftResult = document.getElementById('draftResult');
+    const draftText = document.getElementById('draftText');
+    const draftLoading = document.getElementById('draftLoading');
+    generateDraftBtn.addEventListener('click', async () => {
+        const userDescription = draftInput.value.trim();
+        if (!userDescription) {
+            alert('Vui lòng mô tả tình hình của bạn để tạo đơn mẫu.');
+            return;
+        }
+        
+        draftResult.classList.add('hidden');
+        draftLoading.classList.remove('hidden');
+
+        const prompt = `Dựa trên mô tả sau đây: "${userDescription}", hãy soạn một bản nháp đơn đăng ký mua nhà ở xã hội tại Việt Nam. Đơn mẫu phải có các mục cơ bản như: Kính gửi, Họ và tên, Ngày tháng năm sinh, Địa chỉ, Số CCCD, Nghề nghiệp/Thu nhập, Tình trạng nhà ở, và nội dung cam kết. Sử dụng thông tin từ mô tả để điền vào các mục này nếu có. Nếu không có, hãy để trống hoặc ghi "..."`;
+        
+        try {
+            const draft = await generateContent(prompt);
+            draftText.innerText = draft;
+            draftResult.classList.remove('hidden');
+        } catch (error) {
+            console.error(error);
+            draftText.innerText = 'Xin lỗi, đã xảy ra lỗi khi tạo đơn mẫu. Vui lòng thử lại sau.';
+            draftResult.classList.remove('hidden');
+        } finally {
+            draftLoading.classList.add('hidden');
+        }
+    });
+
     // Document Library logic
     const searchInput = document.getElementById('searchInput');
     const typeFilter = document.getElementById('typeFilter');
@@ -566,7 +617,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const chatInput = document.getElementById('chatInput');
     const sendChatBtn = document.getElementById('sendChatBtn');
 
-    const API_ENDPOINT = 'https://[YOUR_CLOUD_FUNCTION_REGION]-[YOUR_GCP_PROJECT_ID].cloudfunctions.net/gemini-proxy'; // Replace with your actual endpoint
+    // Replace this with your actual Cloud Function URL after deployment
+    const API_ENDPOINT = 'https://us-central1-noxh-ai-prod-2025.cloudfunctions.net/gemini-proxy'; 
 
     // Function to add a message to the chatbox
     function addMessage(sender, message) {
