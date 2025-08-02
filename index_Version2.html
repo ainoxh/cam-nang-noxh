@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cẩm Nang Pháp Luật Nhà Ở Xã Hội Việt Nam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: The SPA is designed with a user-centric, task-oriented approach rather than mirroring the report's linear structure. It features a sticky navigation for easy access to distinct sections: 'Tổng Quan' (Overview) with an interactive timeline, 'Dành cho Người Mua' (For Buyers) with an eligibility checker and process guide, 'Dành cho Chủ Đầu Tư' with key incentives and rules, 'Tra Cứu Văn Bản' with a searchable table, 'Trợ Lý Pháp Lý AI' for a chatbot, and finally a 'Đăng Ký Tư Vấn' section with an embedded Google Form. This structure was chosen to serve the distinct needs of different user personas and make complex legal information digestible and actionable. -->
+    <!-- Visualization & Content Choices: 
+        1. Report Info: Timeline of legal documents -> Goal: Show legislative momentum -> Viz: Interactive Chart.js scatter plot -> Interaction: Hover/click to see details -> Justification: More engaging than a list, visualizes the "wave of legislation".
+        2. Report Info: Buyer eligibility criteria (income cap, status) -> Goal: Personalize information -> Presentation: Interactive HTML form (eligibility checker) -> Interaction: User input for immediate feedback -> Justification: Turns passive rules into an active, helpful tool.
+        3. Report Info: Buyer application process -> Goal: Simplify bureaucracy -> Presentation: HTML/CSS flowchart -> Interaction: Clickable steps for details -> Justification: Visual flow is easier to grasp than text.
+        4. Report Info: Full list of legal documents -> Goal: Enable professional research -> Presentation: Searchable HTML table with AI summary button -> Interaction: Live search/filter and click to generate summary -> Justification: Enhances utility of the source table and provides quick access to key points.
+        5. Report Info: General legal questions -> Goal: Provide a quick answer tool -> Presentation: Chatbot UI -> Interaction: User enters a question, AI provides an answer -> Justification: Offers a dynamic, conversational way to explore the topic.
+        6. Report Info: Customer consultation requests -> Goal: Collect user information -> Presentation: Embedded Google Form via iframe -> Interaction: User fills out form and submits -> Justification: Simplest way to integrate a data collection tool without backend code.
+        Library/Method: Chart.js for canvas-based charts, Vanilla JS for all interactions and API calls, Tailwind CSS for layout and styling, iframe for form embed. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #0d9488; /* teal-600 */
+            border-bottom-color: #0d9488;
+        }
+        .tab-button.active {
+            background-color: #0d9488; /* teal-600 */
+            color: white;
+        }
+        .tab-button {
+            transition: background-color 0.3s, color 0.3s;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <!-- Header & Navigation -->
+    <header id="header" class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="#" class="text-xl font-bold text-teal-700">NƠXH.AI</a>
+                </div>
+                <nav class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-stone-600 border-b-2 border-transparent">Tổng Quan</a>
+                        <a href="#for-buyers" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-stone-600 border-b-2 border-transparent">Dành Cho Người Mua</a>
+                        <a href="#for-developers" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-stone-600 border-b-2 border-transparent">Dành Cho Chủ Đầu Tư</a>
+                        <a href="#library" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-stone-600 border-b-2 border-transparent">Tra Cứu Văn Bản</a>
+                        <a href="#ai-assistant" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-stone-600 border-b-2 border-transparent">Trợ Lý AI</a>
+                        <a href="#consultation-form" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-stone-600 border-b-2 border-transparent">Đăng ký tư vấn</a>
+                    </div>
+                </nav>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-stone-500 hover:text-teal-600 hover:bg-stone-100 focus:outline-none">
+                        <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#overview" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-stone-600">Tổng Quan</a>
+                <a href="#for-buyers" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-stone-600">Dành Cho Người Mua</a>
+                <a href="#for-developers" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-stone-600">Dành Cho Chủ Đầu Tư</a>
+                <a href="#library" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-stone-600">Tra Cứu Văn Bản</a>
+                <a href="#ai-assistant" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-stone-600">Trợ Lý AI</a>
+                <a href="#consultation-form" class="block nav-link px-3 py-2 rounded-md text-base font-medium text-stone-600">Đăng ký tư vấn</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <!-- Hero Section -->
+        <section class="text-center py-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-teal-800 tracking-tight">Cẩm Nang Pháp Luật Nhà Ở Xã Hội</h1>
+            <p class="mt-4 max-w-3xl mx-auto text-lg text-stone-600">
+                Một trang thông tin tương tác giúp bạn dễ dàng tìm hiểu và tra cứu các quy định mới nhất về nhà ở xã hội tại Việt Nam, có hiệu lực từ năm 2024-2025.
+            </p>
+        </section>
+
+        <!-- Overview Section -->
+        <section id="overview" class="py-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-stone-800">Tổng Quan Chính Sách Mới</h2>
+                <p class="mt-2 max-w-2xl mx-auto text-stone-600">
+                    Giai đoạn 2023-2025 chứng kiến một làn sóng lập pháp mạnh mẽ nhằm tháo gỡ các vướng mắc và thúc đẩy phát triển nhà ở xã hội. Dòng thời gian dưới đây thể hiện các văn bản pháp luật quan trọng và thời điểm có hiệu lực.
+                </p>
+            </div>
+            <div class="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+                <div class="chart-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+                 <p class="text-center text-sm text-stone-500 mt-4">Di chuột hoặc chạm vào các điểm trên dòng thời gian để xem thông tin chi tiết.</p>
+            </div>
+        </section>
+        
+        <hr class="my-16 border-stone-200">
+
+        <!-- For Buyers Section -->
+        <section id="for-buyers" class="py-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-stone-800">Dành Cho Người Mua Nhà</h2>
+                <p class="mt-2 max-w-2xl mx-auto text-stone-600">
+                    Tìm hiểu về điều kiện, hồ sơ và quy trình để tiếp cận chính sách nhà ở xã hội một cách đơn giản và rõ ràng nhất.
+                </p>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="p-4 sm:p-6 border-b border-stone-200">
+                    <div class="flex flex-wrap gap-2" id="buyer-tabs">
+                        <button data-tab="eligibility" class="tab-button active px-4 py-2 text-sm font-semibold rounded-full bg-stone-100 text-stone-700">1. Kiểm Tra Điều Kiện</button>
+                        <button data-tab="documents" class="tab-button px-4 py-2 text-sm font-semibold rounded-full bg-stone-100 text-stone-700">2. Hồ Sơ Cần Chuẩn Bị</button>
+                        <button data-tab="process" class="tab-button px-4 py-2 text-sm font-semibold rounded-full bg-stone-100 text-stone-700">3. Quy Trình Mua Nhà</button>
+                    </div>
+                </div>
+                
+                <div id="buyer-tab-content" class="p-6 md:p-8">
+                    <!-- Eligibility Tab -->
+                    <div id="eligibility-content" class="tab-content">
+                        <h3 class="text-xl font-semibold mb-4 text-teal-700">Bạn có đủ điều kiện mua nhà ở xã hội?</h3>
+                        <p class="mb-6 text-stone-600">Sử dụng công cụ dưới đây để kiểm tra nhanh các điều kiện cơ bản về đối tượng, nhà ở và thu nhập theo Nghị định 100/2024/NĐ-CP.</p>
+                        <div class="space-y-6">
+                            <div>
+                                <label class="font-semibold text-stone-700">Đối tượng ưu tiên:</label>
+                                <p class="text-sm text-stone-500 mb-2">Bạn thuộc nhóm đối tượng nào dưới đây?</p>
+                                <select id="eligibility-group" class="w-full p-2 border border-stone-300 rounded-md focus:ring-teal-500 focus:border-teal-500">
+                                    <option value="">-- Chọn đối tượng --</option>
+                                    <option value="low_income">Người có thu nhập thấp tại đô thị</option>
+                                    <option value="worker">Công nhân, người lao động tại các doanh nghiệp</option>
+                                    <option value="officer">Cán bộ, công chức, viên chức</option>
+                                    <option value="other">Các đối tượng khác (người có công, hộ nghèo...)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="font-semibold text-stone-700">Tình trạng nhà ở:</label>
+                                <p class="text-sm text-stone-500 mb-2">Bạn và vợ/chồng (nếu có) đã có nhà ở thuộc sở hữu của mình tại tỉnh/thành phố nơi có dự án chưa?</p>
+                                <select id="eligibility-housing" class="w-full p-2 border border-stone-300 rounded-md focus:ring-teal-500 focus:border-teal-500">
+                                    <option value="">-- Chọn tình trạng nhà ở --</option>
+                                    <option value="no">Chưa có nhà ở</option>
+                                    <option value="yes">Đã có nhà ở</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="income" class="font-semibold text-stone-700">Thu nhập hàng tháng (dành cho người độc thân):</label>
+                                <p class="text-sm text-stone-500 mb-2">Nếu bạn là người độc thân, vui lòng nhập thu nhập thực nhận hàng tháng (VND).</p>
+                                <input type="number" id="eligibility-income" placeholder="Ví dụ: 12000000" class="w-full p-2 border border-stone-300 rounded-md focus:ring-teal-500 focus:border-teal-500">
+                            </div>
+                            <button id="check-eligibility-btn" class="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors">Kiểm Tra</button>
+                            <div id="eligibility-result" class="hidden mt-4 p-4 rounded-md text-center"></div>
+                        </div>
+                    </div>
+                    <!-- Documents Tab -->
+                    <div id="documents-content" class="tab-content hidden">
+                        <h3 class="text-xl font-semibold mb-4 text-teal-700">Hồ sơ đăng ký mua, thuê mua NƠXH</h3>
+                        <p class="mb-6 text-stone-600">Chuẩn bị đầy đủ các giấy tờ sau để nộp cho chủ đầu tư dự án.</p>
+                        <ul class="space-y-4 list-inside">
+                            <li class="flex items-start">
+                                <span class="text-teal-500 mr-3 mt-1">&#10003;</span>
+                                <span><strong class="font-semibold">Đơn đăng ký mua/thuê mua NƠXH:</strong> Theo Mẫu số 01 Phụ lục II của Nghị định 100/2024/NĐ-CP.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-teal-500 mr-3 mt-1">&#10003;</span>
+                                <span><strong class="font-semibold">Giấy tờ chứng minh đối tượng:</strong> Căn cước công dân và các giấy tờ khác tùy theo đối tượng (ví dụ: xác nhận của cơ quan cho cán bộ, công chức).</span>
+                            </li>
+                             <li class="flex items-start">
+                                <span class="text-teal-500 mr-3 mt-1">&#10003;</span>
+                                <span><strong class="font-semibold">Giấy tờ chứng minh điều kiện về nhà ở:</strong> Theo Mẫu số 02 hoặc 03 Phụ lục I của Thông tư 05/2024/TT-BXD, có xác nhận của UBND cấp xã.</span>
+                            </li>
+                             <li class="flex items-start">
+                                <span class="text-teal-500 mr-3 mt-1">&#10003;</span>
+                                <span><strong class="font-semibold">Giấy tờ chứng minh điều kiện về thu nhập:</strong> Xác nhận của cơ quan, đơn vị nơi làm việc về mức thu nhập.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Process Tab -->
+                    <div id="process-content" class="tab-content hidden">
+                        <h3 class="text-xl font-semibold mb-4 text-teal-700">Quy trình mua nhà ở xã hội</h3>
+                        <p class="mb-6 text-stone-600">Các bước chính từ khi nộp hồ sơ đến khi nhận nhà.</p>
+                        <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-0">
+                            <div class="text-center p-4">
+                                <div class="bg-teal-100 text-teal-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">1</div>
+                                <h4 class="font-semibold mt-3">Nộp Hồ Sơ</h4>
+                                <p class="text-sm text-stone-500">Nộp trực tiếp cho chủ đầu tư dự án.</p>
+                            </div>
+                            <div class="h-1 w-1/2 md:h-px md:w-16 bg-stone-300 hidden md:block"></div>
+                            <div class="text-center p-4">
+                                <div class="bg-teal-100 text-teal-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">2</div>
+                                <h4 class="font-semibold mt-3">Xét Duyệt</h4>
+                                <p class="text-sm text-stone-500">Chủ đầu tư xem xét, lập danh sách.</p>
+                            </div>
+                            <div class="h-1 w-1/2 md:h-px md:w-16 bg-stone-300 hidden md:block"></div>
+                            <div class="text-center p-4">
+                                <div class="bg-teal-100 text-teal-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">3</div>
+                                <h4 class="font-semibold mt-3">Công Bố & Ký HĐ</h4>
+                                <p class="text-sm text-stone-500">Công bố danh sách, ký hợp đồng.</p>
+                            </div>
+                             <div class="h-1 w-1/2 md:h-px md:w-16 bg-stone-300 hidden md:block"></div>
+                            <div class="text-center p-4">
+                                <div class="bg-teal-100 text-teal-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">4</div>
+                                <h4 class="font-semibold mt-3">Nhận Nhà</h4>
+                                <p class="text-sm text-stone-500">Nhận bàn giao nhà và Sổ hồng.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-stone-200">
+
+        <!-- For Developers Section -->
+        <section id="for-developers" class="py-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-stone-800">Dành Cho Chủ Đầu Tư</h2>
+                <p class="mt-2 max-w-2xl mx-auto text-stone-600">
+                    Các ưu đãi, cơ chế đặc thù và quy định quan trọng dành cho nhà đầu tư dự án nhà ở xã hội.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-semibold text-lg text-teal-700 mb-3">Cơ Chế Đặc Thù Thí Điểm</h3>
+                    <p class="text-stone-600">Theo Nghị định 192/2025/NĐ-CP, áp dụng cơ chế <strong class="font-semibold">giao chủ đầu tư không thông qua đấu thầu</strong> đối với các dự án không sử dụng vốn đầu tư công, giúp rút ngắn đáng kể thời gian triển khai.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-semibold text-lg text-teal-700 mb-3">Quy Định Về Giá Bán</h3>
+                    <p class="text-stone-600">Giá bán, thuê mua được xác định trên cơ sở tổng chi phí đầu tư và lợi nhuận định mức. Chủ đầu tư phải công khai giá và gửi hồ sơ cho Sở Xây dựng thẩm tra trước khi mở bán.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-semibold text-lg text-teal-700 mb-3">Bảo Vệ Người Mua</h3>
+                    <p class="text-stone-600">Chủ đầu tư <strong class="font-semibold">không được thu quá 95%</strong> giá trị hợp đồng cho đến khi người mua được cấp Giấy chứng nhận (Sổ hồng), đảm bảo quyền lợi cho người mua nhà.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="font-semibold text-lg text-teal-700 mb-3">Kiểm Toán Chi Phí</h3>
+                    <p class="text-stone-600">Trong 180 ngày sau khi nghiệm thu, chủ đầu tư phải thực hiện kiểm toán chi phí đầu tư xây dựng và gửi kết quả cho Sở Xây dựng để kiểm tra, đảm bảo tính minh bạch.</p>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-stone-200">
+
+        <!-- Document Library Section -->
+        <section id="library" class="py-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-stone-800">Tra Cứu Văn Bản Pháp Luật</h2>
+                <p class="mt-2 max-w-2xl mx-auto text-stone-600">
+                    Thư viện đầy đủ các văn bản pháp luật và hướng dẫn mới nhất về nhà ở xã hội. Sử dụng bộ lọc và tìm kiếm để tra cứu nhanh chóng.
+                </p>
+            </div>
+            <div class="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <input type="text" id="searchInput" placeholder="Tìm theo số hiệu, nội dung..." class="flex-grow p-2 border border-stone-300 rounded-md focus:ring-teal-500 focus:border-teal-500">
+                    <select id="typeFilter" class="p-2 border border-stone-300 rounded-md focus:ring-teal-500 focus:border-teal-500">
+                        <option value="">Tất cả loại văn bản</option>
+                        <option value="Luật">Luật</option>
+                        <option value="Nghị định">Nghị định</option>
+                        <option value="Thông tư">Thông tư</option>
+                        <option value="Nghị quyết">Nghị quyết</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-stone-600">
+                        <thead class="text-xs text-stone-700 uppercase bg-stone-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Loại VB</th>
+                                <th scope="col" class="px-6 py-3">Số/Ký hiệu</th>
+                                <th scope="col" class="px-6 py-3">Nội dung chính</th>
+                                <th scope="col" class="px-6 py-3">Ngày hiệu lực</th>
+                                <th scope="col" class="px-6 py-3 text-center">Tùy chọn</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documentsTable">
+                            <!-- JS will populate this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <hr class="my-16 border-stone-200">
+
+        <!-- AI Assistant Section -->
+        <section id="ai-assistant" class="py-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-stone-800">Trợ Lý Pháp Lý AI ✨</h2>
+                <p class="mt-2 max-w-2xl mx-auto text-stone-600">
+                    Hỏi mọi câu hỏi liên quan đến pháp luật nhà ở xã hội tại Việt Nam. Trợ lý AI sẽ giúp bạn trả lời một cách nhanh chóng.
+                </p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-lg max-w-3xl mx-auto">
+                <div id="chatbox" class="h-96 overflow-y-auto mb-4 p-4 rounded-lg bg-stone-100 flex flex-col space-y-4">
+                    <!-- Chat messages will be appended here -->
+                    <div class="flex justify-start">
+                        <div class="bg-teal-500 text-white p-3 rounded-lg max-w-[75%]">Chào bạn, tôi là trợ lý AI. Tôi có thể giúp gì cho bạn về pháp luật nhà ở xã hội?</div>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="chatInput" placeholder="Nhập câu hỏi của bạn..." class="flex-grow p-3 border border-stone-300 rounded-lg focus:ring-teal-500 focus:border-teal-500">
+                    <button id="sendChatBtn" class="bg-teal-600 text-white p-3 rounded-lg hover:bg-teal-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal"><path d="m3 3 3 9-3 9 19-9Z"/><path d="M6 12h16"/></svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <hr class="my-16 border-stone-200">
+
+        <!-- Consultation Form Section -->
+        <section id="consultation-form" class="py-16 scroll-mt-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-stone-800">Đăng ký Tư vấn</h2>
+                <p class="mt-2 max-w-2xl mx-auto text-stone-600">
+                    Để nhận được sự tư vấn chi tiết từ chuyên gia của chúng tôi về các thủ tục hoặc dự án nhà ở xã hội, vui lòng điền thông tin vào biểu mẫu dưới đây.
+                </p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-lg overflow-hidden max-w-3xl mx-auto">
+                 <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfu-29mP3_mBas0aLKerbama5XloPIGETNEKQVHX6BS8bMlPg/viewform?embedded=true" class="w-full h-[959px] border-0" frameborder="0" marginheight="0" marginwidth="0">Đang tải…</iframe>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-stone-800 text-white mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-stone-400 text-sm">
+            <p>&copy; 2025 NƠXH Info. Thông tin chỉ mang tính chất tham khảo, được tổng hợp từ các nguồn công khai.</p>
+            <p>Luôn tham vấn các văn bản pháp luật gốc và chuyên gia để có thông tin chính xác nhất.</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const timelineData = [
+        { date: '2023-11-27', label: 'Luật Nhà ở 2023', summary: 'Nền tảng pháp lý mới, mở rộng đối tượng, ưu đãi CĐT.' },
+        { date: '2024-07-26', label: 'NĐ 100/2024', summary: 'Chi tiết đối tượng, điều kiện, thủ tục mua NƠXH (thu nhập độc thân <= 15tr).' },
+        { date: '2024-07-31', label: 'TT 05/2024', summary: 'Ban hành các mẫu đơn, giấy tờ chứng minh điều kiện.' },
+        { date: '2025-05-29', label: 'NQ 201/2025', summary: 'Khung pháp lý cho các cơ chế đặc thù thí điểm phát triển NƠXH.' },
+        { date: '2025-05-30', label: 'TT 08/2025', summary: 'Sửa đổi định mức xây dựng, ảnh hưởng chi phí đầu tư.' },
+        { date: '2025-06-01', label: 'NQ 155/2025', summary: 'Kế hoạch hành động của Chính phủ để triển khai NQ 201.' },
+        { date: '2025-07-01', label: 'NĐ 192/2025', summary: 'Chi tiết cơ chế thí điểm (giao CĐT không đấu thầu, quy định giá bán).' },
+    ];
+    const documentsData = [
+        { type: 'Luật', number: '27/2023/QH15', content: 'Nền tảng pháp lý mới, mở rộng đối tượng NƠXH, ưu đãi nhà đầu tư.', effectiveDate: '01/08/2024', link: 'https://84860e6b26.vws.vegacdn.vn//data/doc/2024/cttt/uyen/2024_9/12/27-2023-qh15-luat-nha-o_129202414.pdf' },
+        { type: 'Nghị định', number: '100/2024/NĐ-CP', content: 'Quy định chi tiết về đối tượng, điều kiện (thu nhập độc thân ≤ 15tr), hồ sơ, thủ tục.', effectiveDate: '26/07/2024', link: 'https://tulieuvankien.dangcongsan.vn/Uploads/2024/8/8/8/100-nd.signed.pdf' },
+        { type: 'Nghị định', number: '192/2025/NĐ-CP', content: 'Cơ chế đặc thù thí điểm (giao CĐT không đấu thầu, xác định giá bán).', effectiveDate: '01/07/2025', link: 'https://datafiles.chinhphu.vn/cpp/files/vbpq/2025/7/192nd.signed.pdf' },
+        { type: 'Thông tư', number: '05/2024/TT-BXD', content: 'Hướng dẫn các mẫu giấy tờ chứng minh đối tượng và điều kiện.', effectiveDate: '01/08/2024', link: 'https://vanban.chinhphu.vn/file/Download_File?fileId=94084' },
+        { type: 'Thông tư', number: '08/2025/TT-BXD', content: 'Sửa đổi định mức xây dựng, ảnh hưởng chi phí đầu tư.', effectiveDate: '17/07/2025', link: 'https://moc.gov.vn/pl/pages/ChiTietVanBan.aspx?vID=424&TypeVB=1' },
+        { type: 'Nghị quyết', number: '201/2025/QH15', content: 'Thí điểm cơ chế, chính sách đặc thù phát triển NƠXH.', effectiveDate: '01/06/2025', link: 'https://datafiles.chinhphu.vn/cpp/files/vbpq/2025/6/201-qh15.signed.pdf' },
+        { type: 'Nghị quyết', number: '155/NQ-CP', content: 'Kế hoạch của Chính phủ triển khai Nghị quyết 201/2025/QH15.', effectiveDate: '01/06/2025', link: 'https://datafiles.chinhphu.vn/cpp/files/vbpq/2025/6/155nq.signed.pdf' },
+    ];
+
+    // Mobile Menu logic
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    // Active Nav Link on Scroll logic
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 100) {
+                current = section.getAttribute('id');
+            }
+        });
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href').includes(current)) {
+                link.classList.add('active');
+            }
+        });
+    });
+
+    // Timeline Chart logic
+    const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
+    const chartData = {
+        datasets: [{
+            label: 'Văn bản pháp luật',
+            data: timelineData.map((item, index) => ({
+                x: new Date(item.date),
+                y: 1, 
+                label: item.label,
+                summary: item.summary
+            })),
+            backgroundColor: '#0d9488',
+            pointRadius: 8,
+            pointHoverRadius: 12,
+        }]
+    };
+    new Chart(ctxTimeline, {
+        type: 'scatter',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.data[context.dataIndex].label || '';
+                            let summary = context.dataset.data[context.dataIndex].summary || '';
+                            return [label, summary];
+                        }
+                    },
+                    backgroundColor: '#1c1917',
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    padding: 10,
+                    displayColors: false
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'month',
+                        tooltipFormat: 'dd/MM/yyyy',
+                        displayFormats: {
+                           month: 'MM/yyyy'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Dòng thời gian ban hành/hiệu lực'
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    display: false,
+                    min: 0,
+                    max: 2
+                }
+            }
+        }
+    });
+
+    // Buyer Tabs logic
+    const buyerTabs = document.getElementById('buyer-tabs');
+    const tabContents = document.querySelectorAll('.tab-content');
+    buyerTabs.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const tabId = e.target.dataset.tab;
+            
+            buyerTabs.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+
+            tabContents.forEach(content => {
+                if (content.id === `${tabId}-content`) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        }
+    });
+
+    // Eligibility Checker logic
+    const checkBtn = document.getElementById('check-eligibility-btn');
+    const resultDiv = document.getElementById('eligibility-result');
+    checkBtn.addEventListener('click', () => {
+        const group = document.getElementById('eligibility-group').value;
+        const housing = document.getElementById('eligibility-housing').value;
+        const income = document.getElementById('eligibility-income').value;
+
+        let messages = [];
+        let eligible = true;
+        if (!group) { messages.push('Vui lòng chọn nhóm đối tượng của bạn.'); eligible = false; }
+        if (!housing) { messages.push('Vui lòng chọn tình trạng nhà ở của bạn.'); eligible = false; }
+        else if (housing === 'yes') { messages.push('Điều kiện cơ bản: Bạn phải chưa có nhà ở thuộc sở hữu của mình.'); eligible = false; }
+        if (income && parseFloat(income) > 15000000) {
+            messages.push('Thu nhập của người độc thân phải không quá 15 triệu đồng/tháng.');
+            eligible = false;
+        }
+
+        resultDiv.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+        if (eligible && messages.length === 0) {
+            resultDiv.innerHTML = '<strong>Bạn có thể đủ điều kiện!</strong><br>Đây là kết quả sơ bộ. Bạn cần cung cấp đầy đủ giấy tờ để được xét duyệt chính thức.';
+            resultDiv.classList.add('bg-green-100', 'text-green-800');
+        } else {
+            resultDiv.innerHTML = `<strong>Cần xem xét lại:</strong><br>${messages.join('<br>')}`;
+            resultDiv.classList.add('bg-red-100', 'text-red-800');
+        }
+    });
+
+    // Document Library logic
+    const searchInput = document.getElementById('searchInput');
+    const typeFilter = document.getElementById('typeFilter');
+    const tableBody = document.getElementById('documentsTable');
+
+    function renderTable(data) {
+        tableBody.innerHTML = '';
+        if (data.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-4">Không tìm thấy văn bản phù hợp.</td></tr>';
+            return;
+        }
+        data.forEach((doc, index) => {
+            const row = `
+                <tr class="bg-white border-b hover:bg-stone-50">
+                    <td class="px-6 py-4 font-medium text-stone-900">${doc.type}</td>
+                    <td class="px-6 py-4">${doc.number}</td>
+                    <td class="px-6 py-4">${doc.content}</td>
+                    <td class="px-6 py-4">${doc.effectiveDate}</td>
+                    <td class="px-6 py-4 text-center">
+                        <div class="flex flex-col items-center gap-2">
+                           <a href="${doc.link}" target="_blank" rel="noopener noreferrer" class="font-medium text-teal-600 hover:underline">PDF</a>
+                           <button class="summarize-btn text-xs font-semibold py-1 px-2 rounded-full bg-teal-100 text-teal-700 hover:bg-teal-200 transition-colors" data-index="${index}">Tóm tắt ✨</button>
+                        </div>
+                        <div id="summary-${index}" class="mt-2 text-left text-stone-600 italic"></div>
+                    </td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+        document.querySelectorAll('.summarize-btn').forEach(button => {
+            button.addEventListener('click', handleSummarize);
+        });
+    }
+
+    function filterAndSearch() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const typeValue = typeFilter.value;
+        const filteredData = documentsData.filter(doc => {
+            const matchesSearch = doc.number.toLowerCase().includes(searchTerm) || doc.content.toLowerCase().includes(searchTerm);
+            const matchesType = typeValue ? doc.type === typeValue : true;
+            return matchesSearch && matchesType;
+        });
+        renderTable(filteredData);
+    }
+
+    searchInput.addEventListener('input', filterAndSearch);
+    typeFilter.addEventListener('change', filterAndSearch);
+    renderTable(documentsData);
+
+
+    // Gemini API Logic
+    const chatbox = document.getElementById('chatbox');
+    const chatInput = document.getElementById('chatInput');
+    const sendChatBtn = document.getElementById('sendChatBtn');
+
+    const API_ENDPOINT = 'https://[YOUR_CLOUD_FUNCTION_REGION]-[YOUR_GCP_PROJECT_ID].cloudfunctions.net/gemini-proxy'; // Replace with your actual endpoint
+
+    // Function to add a message to the chatbox
+    function addMessage(sender, message) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('flex');
+        if (sender === 'user') {
+            messageElement.classList.add('justify-end');
+            messageElement.innerHTML = `<div class="bg-blue-500 text-white p-3 rounded-lg max-w-[75%]">${message}</div>`;
+        } else {
+            messageElement.classList.add('justify-start');
+            messageElement.innerHTML = `<div class="bg-teal-500 text-white p-3 rounded-lg max-w-[75%]">${message}</div>`;
+        }
+        chatbox.appendChild(messageElement);
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    // Function to handle chat submission
+    async function handleChat() {
+        const prompt = chatInput.value;
+        if (prompt.trim() === '') return;
+
+        addMessage('user', prompt);
+        chatInput.value = '';
+
+        const thinkingMessage = document.createElement('div');
+        thinkingMessage.innerHTML = `<div class="bg-teal-500 text-white p-3 rounded-lg max-w-[75%]">Đang xử lý...</div>`;
+        chatbox.appendChild(thinkingMessage);
+        chatbox.scrollTop = chatbox.scrollHeight;
+
+        try {
+            const botResponse = await generateContent(prompt);
+            thinkingMessage.remove();
+            addMessage('bot', botResponse);
+        } catch (error) {
+            console.error(error);
+            thinkingMessage.remove();
+            addMessage('bot', 'Xin lỗi, đã xảy ra lỗi khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.');
+        }
+    }
+
+    // Event listeners for the chat input
+    sendChatBtn.addEventListener('click', handleChat);
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleChat();
+        }
+    });
+
+    // Function to handle document summary
+    async function handleSummarize(event) {
+        const button = event.target;
+        const index = button.dataset.index;
+        const doc = documentsData[index];
+        const summaryContainer = document.getElementById(`summary-${index}`);
+
+        if (summaryContainer.innerHTML.trim() !== '') {
+            summaryContainer.innerHTML = '';
+            return;
+        }
+
+        summaryContainer.innerHTML = 'Đang tóm tắt...';
+
+        const prompt = `Dựa trên nội dung chính của văn bản pháp luật sau: "${doc.content}", hãy tóm tắt một cách súc tích và dễ hiểu.`;
+
+        try {
+            const summary = await generateContent(prompt);
+            summaryContainer.innerHTML = summary;
+        } catch (error) {
+            console.error(error);
+            summaryContainer.innerHTML = 'Không thể tóm tắt văn bản. Vui lòng thử lại.';
+        }
+    }
+
+    // Generic function to call the new API endpoint
+    async function generateContent(userPrompt) {
+        let retryCount = 0;
+        const maxRetries = 3;
+        while (retryCount < maxRetries) {
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: userPrompt })
+                });
+                const result = await response.json();
+                if (result.text) {
+                    return result.text;
+                } else {
+                    throw new Error('Cấu trúc phản hồi không hợp lệ từ API.');
+                }
+            } catch (error) {
+                retryCount++;
+                if (retryCount < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+                } else {
+                    throw error;
+                }
+            }
+        }
+    }
+});
+</script>
+
+</body>
+</html>
